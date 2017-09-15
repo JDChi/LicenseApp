@@ -43,6 +43,7 @@ public class RegistActivity extends AppCompatActivity implements View.OnClickLis
         bt_gen.setOnClickListener(this);
         bt_check.setOnClickListener(this);
 
+
         registPresenter = new RegistPresenter(this, this);
     }
 

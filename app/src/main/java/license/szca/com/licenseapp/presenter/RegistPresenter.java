@@ -33,6 +33,7 @@ public class RegistPresenter {
             return;
         }
 
+        mIRegistView.genLicenseKeySuccess(genLicenseKeyUtil.genLicense(name));
         Log.d(TAG, genLicenseKeyUtil.genLicense(name));
     }
 
