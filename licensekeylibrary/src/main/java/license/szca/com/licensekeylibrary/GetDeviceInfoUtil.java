@@ -1,12 +1,22 @@
 package license.szca.com.licensekeylibrary;
 
-import java.io.InputStream;
-import java.util.Enumeration;
+import android.content.Context;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
+import android.util.Log;
+
+import org.spongycastle.util.encoders.Hex;
+
+import java.io.ByteArrayInputStream;
+
+import java.security.cert.CertificateFactory;
+import java.util.Iterator;
+import java.util.List;
 import java.util.UUID;
-import java.util.jar.JarEntry;
-import java.util.jar.JarFile;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.security.cert.X509Certificate;
 
 /**
  * description 获取设备相关信息的工具类
@@ -17,7 +27,10 @@ import java.util.regex.Pattern;
 public class GetDeviceInfoUtil {
 
 
-
+    private Context mContext;
+    public GetDeviceInfoUtil(Context context){
+        mContext = context;
+    }
     /**
      * 获取唯一标识码（每次安装app都是不一样的值）
      * 如：736519d5-4f7e-42fd-a6b0-66b74dff4657
@@ -32,64 +45,37 @@ public class GetDeviceInfoUtil {
         return matcher.replaceAll("").trim();
     }
 
-    public String getApplicationId() {
-        return BuildConfig.APPLICATION_ID;
+    /**
+     * 获取应用包名
+     * @return
+     */
+    public String getAppPackageName() {
+        return mContext.getPackageName();
     }
 
+    /**
+     * 获取应用签名
+     * @return
+     */
+    public String getSign() {
+        PackageManager pm = mContext.getPackageManager();
+        List<PackageInfo> apps = pm
+                .getInstalledPackages(PackageManager.GET_SIGNATURES);
+        Iterator<PackageInfo> iter = apps.iterator();
 
-    public static String getApkSignP(String apkFilePath){
-        byte[] readBuffer = new byte[8192];
-        java.security.cert.Certificate[] certs = null;
-        try{
-            JarFile jarFile = new JarFile(apkFilePath);
-            Enumeration entries = jarFile.entries();
-            while(entries.hasMoreElements()){
-                JarEntry je = (JarEntry)entries.nextElement();
-                if(je.isDirectory()){
-                    continue;
-                }
-                if(je.getName().startsWith("META-INF/")){
-                    continue;
-                }
-                java.security.cert.Certificate[] localCerts = loadCertificates(jarFile,je,readBuffer);
-                //  System.out.println("File " + apkFilePath + " entry " + je.getName()+ ": certs=" + certs + " ("+ (certs != null ? certs.length : 0) + ")");
-                if (certs == null) {
-                    certs = localCerts;
-                }else{
-                    for(int i=0; i<certs.length; i++){
-                        boolean found = false;
-                        for (int j = 0; j < localCerts.length; j++) {
-                            if (certs[i] != null && certs[i].equals(localCerts[j])) {
-                                found = true;
-                                break;
-                            }
-                        }
-                        if (!found || certs.length != localCerts.length) {
-                            jarFile.close();
-                            return null;
-                        }
-                    }
-                }
+        while (iter.hasNext()) {
+            PackageInfo info = iter.next();
+            String packageName = info.packageName;
+            //按包名 取签名
+            if (packageName.equals(getAppPackageName())) {
+                byte[] signByte = info.signatures[0].toByteArray();
+
+                return new String( Hex.encode(signByte));
+
             }
-            jarFile.close();
-            //Log.i("wind cert=",certs[0].toString());
-            return certs[0].getPublicKey().toString();
-        }catch(Exception e){
-            e.printStackTrace();
         }
         return null;
     }
-    private static java.security.cert.Certificate[] loadCertificates(JarFile jarFile, JarEntry je, byte[] readBuffer) {
-        try {
-            InputStream is = jarFile.getInputStream(je);
-            while(is.read(readBuffer,0,readBuffer.length)!=-1) {
-            }
-            is.close();
-            return (java.security.cert.Certificate[])(je!=null?je.getCertificates():null);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Exception reading "+je.getName()+" in "+jarFile.getName()+": "+e);
-        }
-        return null;
-    }
+
+
 }

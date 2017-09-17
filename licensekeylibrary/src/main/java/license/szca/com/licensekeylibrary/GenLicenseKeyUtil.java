@@ -1,5 +1,7 @@
 package license.szca.com.licensekeylibrary;
 
+import android.content.Context;
+
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.spongycastle.jce.provider.BouncyCastleProvider;
@@ -31,6 +33,8 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 
+import static javax.crypto.Cipher.PRIVATE_KEY;
+
 /**
  * description
  * Created by JD
@@ -45,16 +49,27 @@ public class GenLicenseKeyUtil {
     }
 
     private final String TAG = "GenLicenseKeyUtil";
-    private final String PUBLIC_KEY = "publicKey";
-    private final String PRIVATE_KEY = "privateKey";
-    private Map<String, Key> mKeyMap = new HashMap<>();
-    private String mOriginData;
-    private GetDeviceInfoUtil getDeviceInfoUtil;
 
-    public GenLicenseKeyUtil() {
+    private GetDeviceInfoUtil getDeviceInfoUtil;
+    private Context mContext;
+    private String mLicenseKey = null;
+    private String mAppSignature = null;
+    private CodeUtil codeUtil;
+    private RSAUtil rsaUtil;
+    private SHAUtil shaUtil;
+    private RootData mRootData;
+    private AESUtil aesUtil;
+
+    public GenLicenseKeyUtil(Context context) {
+        mContext = context;
+        getDeviceInfoUtil = new GetDeviceInfoUtil(mContext);
+        codeUtil = new CodeUtil();
+        rsaUtil = new RSAUtil();
+        shaUtil = new SHAUtil();
+        aesUtil = new AESUtil();
+        mRootData = new RootData();
         //1.随机初始化密钥和公钥
-        initPrivateAndPublicKey();
-        getDeviceInfoUtil = new GetDeviceInfoUtil();
+        rsaUtil.initPrivateAndPublicKey();
     }
 
     /**
@@ -63,53 +78,48 @@ public class GenLicenseKeyUtil {
      */
     public String genLicense(String input) {
 
-        //2.获取要加密的原始数据
-        mOriginData = genData(input);
+        //2.获取证书的原始数据
+        String licenseData = genLicenseData(input);
         //3.对拼接后的数据使用SHA1做信息摘要
-        byte[] sha1Data = encodeSHA1(mOriginData);
+        byte[] sha1Data = shaUtil.encodeSHA1(licenseData);
         //4.对摘要后的数据做Hex编码
-        String licenseKey = hexData(sha1Data);
+        mLicenseKey = codeUtil.hexData(sha1Data);
 
-        return licenseKey;
+        return mLicenseKey;
     }
 
-    /**
-     * 对用户输入的内容进行一系列的算法运算，返回license
-     *
-     * @param input
-     * @return
-     */
-    private String encryptData(String input) {
+    public String getSubmitData(){
+        //获取要提交给服务端的数据
+        String submitData = genData();
+        //数据过长，使用aes对称加密
+String data = aesUtil.encryptData(submitData);
 
 
-//        //4.对摘要后的数据使用RSA公钥加密
-//        byte[] encryptData = encryptRSAPublicKey(sha1Data);
-//        //5.对加密后的数据进行Hex编码
-//        String hexData = hexData(encryptData);
-//        byte[] signData = signWithPrivateKey(hexData);
-//        String sighHexData = hexData(signData);
 
-        return null;
+
+        //将数据进行rsa加密
+        byte[] encryptDataByte = rsaUtil.encryptRSAPublicKey(submitData);
+
+        return new String(encryptDataByte);
     }
 
 
     /**
-     * 生成原始数据
+     * 生成证书里的源数据（证书里的数据包括用户名，uuid和包名）
      *
      * @param input
      * @return
      */
-    private String genData(String input) {
+    private String genLicenseData(String input) {
 
-        RootData rootData = new RootData();
-        rootData.setUserName(input);
-        rootData.setUuid(getDeviceInfoUtil.getUUID());
-        rootData.setApplicationId(getDeviceInfoUtil.getApplicationId());
+        mRootData.setUserName(input);
+        mRootData.setUuid(getDeviceInfoUtil.getUUID());
+        mRootData.setApplicationId(getDeviceInfoUtil.getAppPackageName());
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject.put("userName", rootData.getUserName());
-            jsonObject.put("uuid", rootData.getUuid());
-            jsonObject.put("applicationId", rootData.getApplicationId());
+            jsonObject.put("userName", mRootData.getUserName());
+            jsonObject.put("uuid", mRootData.getUuid());
+            jsonObject.put("applicationId", mRootData.getApplicationId());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -118,260 +128,34 @@ public class GenLicenseKeyUtil {
         return jsonObject.toString();
     }
 
-    public boolean checkData(String licenseKey) {
-
-
-        return true;
-    }
 
     /**
-     * RSA加密数据
-     *
-     * @param data
-     * @return
-     */
-    public byte[] encryptRSAPublicKey(byte[] data) {
-        byte[] dataBytes = null;
-
-        try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
-            cipher.init(Cipher.ENCRYPT_MODE, mKeyMap.get(PUBLIC_KEY));
-            dataBytes = cipher.doFinal(data);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
-
-        return dataBytes;
-    }
-
-    /**
-     * RSA加密数据
-     *
-     * @param data
-     * @return
-     */
-    public byte[] encryptRSAPublicKey(String data) {
-        byte[] dataBytes = null;
-
-        try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
-            cipher.init(Cipher.ENCRYPT_MODE, mKeyMap.get(PUBLIC_KEY));
-            dataBytes = cipher.doFinal(data.getBytes());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
-
-        return dataBytes;
-    }
-
-    /**
-     * RSA解密数据
-     *
-     * @param data
-     */
-    public byte[] decryptRSAPrivateKey(String data) {
-        byte[] dataBytes = null;
-
-        try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
-            cipher.init(Cipher.DECRYPT_MODE, mKeyMap.get(PRIVATE_KEY));
-            dataBytes = cipher.doFinal(data.getBytes());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
-
-        return dataBytes;
-    }
-
-    /**
-     * RSA解密数据
-     *
-     * @param data
-     */
-    public byte[] decryptRSAPrivateKey(byte[] data) {
-        byte[] dataBytes = null;
-
-        try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
-            cipher.init(Cipher.DECRYPT_MODE, mKeyMap.get(PRIVATE_KEY));
-            dataBytes = cipher.doFinal(data);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
-
-        return dataBytes;
-    }
-
-    /**
-     * 初始化生成公钥和密钥
+     * 生成要提交的原始数据，即在用户名，uuid，applicaitonId的基础上
+     * 加入证书
      *
      * @return
      */
-    private Map<String, Key> initPrivateAndPublicKey() {
+    private String genData() {
 
-        KeyPairGenerator keyPairGenerator = null;
+
+        mRootData.setLicenseKey(mLicenseKey);
+        mRootData.setAppSignture(getDeviceInfoUtil.getSign());
+        JSONObject jsonObject = new JSONObject();
         try {
-            keyPairGenerator = KeyPairGenerator.getInstance("RSA", "SC");
-            keyPairGenerator.initialize(2048);
-            //生成一个密钥对
-            KeyPair keyPair = keyPairGenerator.generateKeyPair();
-            RSAPublicKey publicKey = (RSAPublicKey) keyPair.getPublic();
-            RSAPrivateKey privateKey = (RSAPrivateKey) keyPair.getPrivate();
-            mKeyMap.put(PUBLIC_KEY, publicKey);
-            mKeyMap.put(PRIVATE_KEY, privateKey);
-//        Log.d(TAG, "生成密钥对成功");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchProviderException e) {
+
+            jsonObject.put("licenseKey", mRootData.getLicenseKey());
+            jsonObject.put("appSignature", mRootData.getAppSignture());
+
+        } catch (JSONException e) {
             e.printStackTrace();
         }
 
 
-        return mKeyMap;
+        return jsonObject.toString();
     }
 
-    /**
-     * 获取生成的密钥
-     *
-     * @return
-     */
-    public Key getPrivateKey() {
-        return mKeyMap.get(PRIVATE_KEY);
-    }
+    public void getPublicKey(){
 
-    /**
-     * 获取生成的公钥
-     *
-     * @return
-     */
-    public Key getPublicKey() {
-        return mKeyMap.get(PUBLIC_KEY);
-    }
-
-
-
-
-    /**
-     * 使用SHA1进行消息摘要
-     *
-     * @param data
-     * @return
-     */
-    private byte[] encodeSHA1(String data) {
-        byte[] dataByte = null;
-        byte[] newDataByte = null;
-        try {
-            //使用SHA进行消息摘要
-            Security.addProvider(new BouncyCastleProvider());
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA");
-            dataByte = messageDigest.digest(data.getBytes());
-            //摘要后截取后10位返回
-            newDataByte = new byte[10];
-            System.arraycopy(dataByte , 9 , newDataByte ,0, 10);
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-
-        return newDataByte;
-    }
-
-    private String hexData(byte[] data) {
-//        String hexResult = new String(Hex.encode(data));
-//        return hexResult;
-        return new String(Hex.encode(data)).toUpperCase();
-    }
-
-    /**
-     * 私钥签名
-     * @param data
-     * @return
-     */
-    private byte[] signWithPrivateKey(String data) {
-
-        byte[] result = null;
-        try {
-
-            PKCS8EncodedKeySpec pkcs8EncodeKeySpec = new PKCS8EncodedKeySpec(mKeyMap.get(PRIVATE_KEY).getEncoded());
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodeKeySpec);
-            Signature signature = Signature.getInstance("SHA1withRSA");
-            signature.initSign(privateKey);
-            signature.update(data.getBytes());
-            //私钥签名后的数据
-            result = signature.sign();
-
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
-            e.printStackTrace();
-        }
-
-        return result;
-    }
-
-    /**
-     * 公钥验签
-     */
-    private boolean checkWithPublicKey(byte[] data) {
-
-        boolean isRight = false;
-        try {
-            X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(mKeyMap.get(PUBLIC_KEY).getEncoded());
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
-            Signature signature = Signature.getInstance("SHA1withRSA");
-            signature.initVerify(publicKey);
-            isRight = signature.verify(data);
-
-
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (InvalidKeySpecException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        } catch (SignatureException e) {
-            e.printStackTrace();
-        }
-
-        return isRight;
     }
 
 
