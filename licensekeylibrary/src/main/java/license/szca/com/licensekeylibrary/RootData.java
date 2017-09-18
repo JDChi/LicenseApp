@@ -1,47 +1,60 @@
 package license.szca.com.licensekeylibrary;
 
 /**
- * description 要提交的数据实体类
- * Created by JD
- * on 2017/9/15.
+ * description : 要提交的数据的实体类
+ * author : JDNew
+ * on : 2017/9/17.
  */
 
-public class RootData {
-
+class RootData {
     private String userName;
     private String uuid;
     private String applicationId;
-    private String appSignature;
+    private String licenseKey;
+    private String appSignture;
 
-    public String getUserName() {
-        return userName;
-    }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+
+
+
+
+    public void setUuid(String uuid) {
+        this.uuid = uuid;
     }
 
     public String getUuid() {
         return uuid;
     }
 
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
+    public void setApplicationId(String applicationId) {
+        this.applicationId = applicationId;
     }
 
     public String getApplicationId() {
         return applicationId;
     }
 
-    public void setApplicationId(String applicationId) {
-        this.applicationId = applicationId;
+    public void setUserName(String userName) {
+        this.userName = userName;
     }
 
-    public String getAppSignature() {
-        return appSignature;
+    public String getUserName() {
+        return userName;
     }
 
-    public void setAppSignature(String appSignature) {
-        this.appSignature = appSignature;
+    public String getAppSignture() {
+        return appSignture;
+    }
+
+    public void setAppSignture(String appSignture) {
+        this.appSignture = appSignture;
+    }
+
+    public String getLicenseKey() {
+        return licenseKey;
+    }
+
+    public void setLicenseKey(String licenseKey) {
+        this.licenseKey = licenseKey;
     }
 }

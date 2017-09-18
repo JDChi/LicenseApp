@@ -1,6 +1,12 @@
 package license.szca.com.licenseapp.activity;
 
+import android.content.ComponentName;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Bundle;
+import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -25,6 +31,24 @@ public class RegistActivity extends AppCompatActivity implements View.OnClickLis
     private Button bt_check;
     private RegistPresenter registPresenter;
     private final String TAG = "RegistActivity";
+    private Messenger messenger;
+
+
+    private ServiceConnection mConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName name, IBinder service) {
+            messenger = new Messenger(service);
+            Message message = new Message();
+            Bundle bundle = new Bundle();
+//            bundle.putString();
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName name) {
+
+        }
+    };
+
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -72,12 +96,14 @@ et_key.setText(key);
 
     @Override
     public void checkLicenseKeySuccess(String msg) {
-
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+        startActivity(new Intent(this , RegistSuccessActivity.class));
+        finish();
     }
 
     @Override
     public void checkLicenseKeyFailed(String msg) {
-
+        Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 }
 

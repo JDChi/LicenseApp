@@ -1,5 +1,9 @@
 package license.szca.com.licensekeylibrary;
 
+import android.content.Context;
+import android.content.Context;
+import android.support.test.InstrumentationRegistry;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -14,11 +18,15 @@ import static org.junit.Assert.assertEquals;
 public class SHATest {
 
   private String testData = "hello";
+    private Context mContext;
     private GenLicenseKeyUtil genLicenseKeyUtil;
 
     @Before
     public void init(){
-        genLicenseKeyUtil = new GenLicenseKeyUtil();
+
+
+          mContext = InstrumentationRegistry.getContext();
+        genLicenseKeyUtil = new GenLicenseKeyUtil(mContext);
     }
 
     @Test
