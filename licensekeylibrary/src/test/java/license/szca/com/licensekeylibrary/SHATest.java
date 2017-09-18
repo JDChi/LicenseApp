@@ -1,38 +1,29 @@
 package license.szca.com.licensekeylibrary;
 
-import android.content.Context;
-import android.content.Context;
-import android.support.test.InstrumentationRegistry;
-
 import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * description 生成的20位license的测试类
+ * description
  * Created by JD
- * on 2017/9/14.
+ * on 2017/9/18.
  */
 
 public class SHATest {
 
-  private String testData = "hello";
-    private Context mContext;
-    private GenLicenseKeyUtil genLicenseKeyUtil;
-
+    SHAUtil shaUtil;
+    CodeUtil codeUtil;
+    String originData = "abc";
     @Before
     public void init(){
-
-
-          mContext = InstrumentationRegistry.getContext();
-        genLicenseKeyUtil = new GenLicenseKeyUtil(mContext);
+        shaUtil = new SHAUtil();
+        codeUtil = new CodeUtil();
     }
 
     @Test
     public void shaTest(){
-        assertEquals(genLicenseKeyUtil.genLicense(testData) , genLicenseKeyUtil.genLicense(testData));
+       assertEquals(codeUtil.hexData(shaUtil.encodeSHA1(originData.getBytes())) , codeUtil.hexData(shaUtil.encodeSHA1(originData.getBytes())));
     }
-
-
 }

@@ -43,22 +43,19 @@ public class RSAUtil {
     private final String PRIVATE_KEY = "privateKey";
     private final String KEY_ALGORITHM = "RSA";
 
+
     /**
      * RSA私钥加密数据
-     *
-     * @param data
-     * @return
+     * @param data 要加密的数据
+     * @param privateKeyByte 二进制的私钥
+     * @return 私钥加密后的数据
      */
-    public byte[] encryptWithPrivateKey(byte[] data , byte[] privateKeyByte) {
+    public byte[] encryptWithPrivateKey(byte[] data, byte[] privateKeyByte) {
         byte[] dataBytes = null;
-        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKeyByte);
-
-
-
         try {
+            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKeyByte);
             KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
             PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
-
 
             Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
             cipher.init(Cipher.ENCRYPT_MODE, privateKey);
@@ -80,23 +77,18 @@ public class RSAUtil {
         return dataBytes;
     }
 
-
-
     /**
      * RSA解密数据
-     *
-     * @param data
+     * @param data 要解密的数据
+     * @param publicKeyByte 二进制公钥
+     * @return 解密后的数据
      */
-    public byte[] decryptWithPublicKey(byte[] data , byte[] key) {
+    public byte[] decryptWithPublicKey(byte[] data, byte[] publicKeyByte) {
         byte[] dataBytes = null;
-        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(key);
-
-
         try {
+            X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(publicKeyByte);
             KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
             PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
-
-
 
             Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm(), new BouncyCastleProvider());
             cipher.init(Cipher.DECRYPT_MODE, publicKey);
@@ -125,9 +117,8 @@ public class RSAUtil {
      */
     public Map<String, Key> initPrivateAndPublicKey() {
 
-        KeyPairGenerator keyPairGenerator = null;
         try {
-            keyPairGenerator = KeyPairGenerator.getInstance("RSA", "SC");
+            KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA", "SC");
             keyPairGenerator.initialize(2048);
             //生成一个密钥对
             KeyPair keyPair = keyPairGenerator.generateKeyPair();
@@ -163,68 +154,5 @@ public class RSAUtil {
     public byte[] getPublicKey() {
         return mKeyMap.get(PUBLIC_KEY).getEncoded();
     }
-
-
-//    /**
-//     * 私钥签名
-//     *
-//     * @param data
-//     * @return
-//     */
-//    private byte[] signWithPrivateKey(String data) {
-//
-//        byte[] result = null;
-//        try {
-//
-//            PKCS8EncodedKeySpec pkcs8EncodeKeySpec = new PKCS8EncodedKeySpec(mKeyMap.get(PRIVATE_KEY).getEncoded());
-//            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-//            PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodeKeySpec);
-//            Signature signature = Signature.getInstance("SHA1withRSA");
-//            signature.initSign(privateKey);
-//            signature.update(data.getBytes());
-//            //私钥签名后的数据
-//            result = signature.sign();
-//
-//
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (InvalidKeySpecException e) {
-//            e.printStackTrace();
-//        } catch (InvalidKeyException e) {
-//            e.printStackTrace();
-//        } catch (SignatureException e) {
-//            e.printStackTrace();
-//        }
-//
-//        return result;
-//    }
-//
-//    /**
-//     * 公钥验签
-//     */
-//    private boolean checkWithPublicKey(byte[] data) {
-//
-//        boolean isRight = false;
-//        try {
-//            X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(mKeyMap.get(PUBLIC_KEY).getEncoded());
-//            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-//            PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
-//            Signature signature = Signature.getInstance("SHA1withRSA");
-//            signature.initVerify(publicKey);
-//            isRight = signature.verify(data);
-//
-//
-//        } catch (NoSuchAlgorithmException e) {
-//            e.printStackTrace();
-//        } catch (InvalidKeySpecException e) {
-//            e.printStackTrace();
-//        } catch (InvalidKeyException e) {
-//            e.printStackTrace();
-//        } catch (SignatureException e) {
-//            e.printStackTrace();
-//        }
-//
-//        return isRight;
-//    }
 
 }

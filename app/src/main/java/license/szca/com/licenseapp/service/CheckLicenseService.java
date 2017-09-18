@@ -11,11 +11,14 @@ import android.util.Log;
 
 import com.google.gson.Gson;
 
-import org.spongycastle.util.encoders.Base64;
+import org.spongycastle.util.encoders.Hex;
 
 import license.szca.com.licensekeylibrary.AESUtil;
+import license.szca.com.licensekeylibrary.CodeUtil;
 import license.szca.com.licensekeylibrary.RSAUtil;
+import license.szca.com.licensekeylibrary.RootData;
 import license.szca.com.licensekeylibrary.RootSubmitData;
+import license.szca.com.licensekeylibrary.SHAUtil;
 
 /**
  * description : 一个用于检验证书的服务，在新的进程里
@@ -29,11 +32,12 @@ public class CheckLicenseService extends Service {
     private String mSubmitData;
     private byte[] mRSAPublicKey = null;
     private byte[] mAESKey = null;
-    private String mClientData = null;
+    private byte[] mClientData = null;
     private final String TAG = "CheckLicenseService";
     private RSAUtil rsaUtil;
     private AESUtil aesUtil;
-
+private CodeUtil codeUtil;
+    private SHAUtil shaUtil;
 
 
 
@@ -42,6 +46,8 @@ public class CheckLicenseService extends Service {
         super.onCreate();
         rsaUtil = new RSAUtil();
         aesUtil = new AESUtil();
+        codeUtil = new CodeUtil();
+        shaUtil = new SHAUtil();
     }
 
     private class MessengerHandler extends Handler {
@@ -51,11 +57,11 @@ public class CheckLicenseService extends Service {
                 case MSG_CLIENT_DATA:
                     //接收来自客户端发过来的数据
                     if (receiveDatafromClient(msg)) {
-                        //处理客户端发送过来的数据
-                        analyzeData(msg);
+                        //回复客户端成功
+                        replySuccess(msg);
                     } else {
                         //回复客户端失败
-                        replyClientError();
+                        replyError(msg);
                     }
                     break;
                 default:
@@ -66,8 +72,9 @@ public class CheckLicenseService extends Service {
 
     /**
      * 回复客户端接收错误
+     * @param msg
      */
-    private void replyClientError() {
+    private void replyError(Message msg) {
 
     }
 
@@ -76,7 +83,7 @@ public class CheckLicenseService extends Service {
      *
      * @param msg
      */
-    private void analyzeData(Message msg) {
+    private void replySuccess(Message msg) {
 
 //        try {
 //            Messenger messenger = msg.replyTo;
@@ -98,20 +105,47 @@ public class CheckLicenseService extends Service {
      * @return
      */
     private boolean receiveDatafromClient(Message msg) {
-        mSubmitData = msg.getData().getString("submitData");
-        Log.d(TAG, "获取到客户端发来的数据：" + mSubmitData);
-        Gson gson = new Gson();
-        RootSubmitData rootSubmitData = gson.fromJson(mSubmitData, RootSubmitData.class);
-        mRSAPublicKey = Base64.decode(rootSubmitData.getRsaPublicKey().getBytes());
 
-        mAESKey = Base64.decode(rootSubmitData.getEncrptAESKey().getBytes());
-        mClientData = rootSubmitData.getEncryptAESClientData();
-        //用RSA公钥解密出AES密钥
-        byte[] aesKeyByte = rsaUtil.decryptWithPublicKey(mAESKey, mRSAPublicKey);
-//        String result = aesUtil.decryptData(mClientData , aesKeyByte);
-//        Log.d(TAG, "结果是：" + result);
+        try {
+            mSubmitData = msg.getData().getString("submitData");
+            Log.d(TAG, "获取到客户端发来的数据：" + mSubmitData);
+            Gson gson = new Gson();
+            RootSubmitData rootSubmitData = gson.fromJson(mSubmitData, RootSubmitData.class);
+            mRSAPublicKey = Hex.decode(rootSubmitData.getRsaPublicKey());
+            mAESKey = Hex.decode(rootSubmitData.getEncrptAESKey());
+            mClientData = Hex.decode(rootSubmitData.getEncryptAESClientData());
+            //用RSA公钥解密出AES密钥
+            byte[] aesKeyByte = rsaUtil.decryptWithPublicKey(mAESKey, mRSAPublicKey);
+            //用AES密钥解密出客户端数据
+            byte[] resultByte = aesUtil.decryptData(mClientData , aesKeyByte);
 
-        return true;
+
+            //用解密出的AES密钥解密数据
+            String result = new String(Hex.decode(resultByte));
+
+            RootData rootData = gson.fromJson(result , RootData.class);
+            String data = rootData.getUserName()
+                    + rootData.getUuid()
+                    + rootData.getApplicationId();
+
+
+            String newLicense = codeUtil.hexData(
+                    shaUtil.encodeSHA1(data.getBytes())
+            );
+            //判断由username，uuid和applicationId拼接并哈希后的值与客户端传过来的证书是否一致
+            if(newLicense.equals(rootData.getLicenseKey())){
+                return true;
+            }else {
+                return false;
+            }
+
+        }catch (Exception e){
+            e.printStackTrace();
+            return false;
+        }
+
+
+
 
     }
 

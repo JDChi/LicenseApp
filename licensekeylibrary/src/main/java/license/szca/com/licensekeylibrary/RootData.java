@@ -6,7 +6,7 @@ package license.szca.com.licensekeylibrary;
  * on : 2017/9/17.
  */
 
-class RootData {
+public class RootData {
     private String userName;
     private String uuid;
     private String applicationId;

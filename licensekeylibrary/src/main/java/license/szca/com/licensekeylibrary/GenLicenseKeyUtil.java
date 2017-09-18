@@ -4,6 +4,7 @@ import android.content.Context;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.spongycastle.util.encoders.Hex;
 
 import java.security.Security;
 
@@ -53,7 +54,7 @@ public class GenLicenseKeyUtil {
         //2.获取证书的原始数据
         String licenseData = genLicenseData(input);
         //3.对拼接后的数据使用SHA1做信息摘要
-        byte[] sha1Data = shaUtil.encodeSHA1(licenseData);
+        byte[] sha1Data = shaUtil.encodeSHA1(licenseData.getBytes());
         //4.对摘要后的数据做Hex编码，得到要输入的长度20位，大写字母和数字组成的证书
         mLicenseKey = codeUtil.hexData(sha1Data);
 
@@ -67,19 +68,23 @@ public class GenLicenseKeyUtil {
      */
     public String getSubmitData(String licenseKey) {
 
-        //获取要提交的数据并加密（由于数据过长，使用aes对称加密）
+        //获取要提交的客户端数据
         String clientData = genClientData(licenseKey);
-        String aesEncryptClientData = new String(aesUtil.encryptData(clientData , aesUtil.getAESSecretKey()));
-        //获取aes的加密密钥
+        //由于数据过长，无法进行RSA加密，所以使用AES加密客户端数据
+        byte[] aesEncryptClientByte = aesUtil.encryptData(Hex.encode(clientData.getBytes()) , aesUtil.getAESSecretKey());
+        //获取AES的加密密钥
         byte[] aesKey = aesUtil.getAESSecretKey();
-        //对aes的密钥进行rsa加密
-//        String encryptAESKey = new String(Base64.encode(rsaUtil.encryptWithPrivateKey(aesKey)));
-        //对aes加密后客户端数据，aes密钥，rsa公钥打包成json返回
-//        String submitData = genSubmitData(aesEncryptClientData , encryptAESKey , new String(Base64.encode(rsaUtil.getPublicKey())));
+        //用RSA对AES的密钥进行加密
+        byte[] encryptAESKey = rsaUtil.encryptWithPrivateKey(aesKey , rsaUtil.getPrivateKey());
+        //获取RSA公钥
+        byte[] rsaPublicKey = rsaUtil.getPublicKey();
+
+        //对aes加密后客户端数据，aes密钥，rsa公钥三者打包成json返回
+        String submitData = genSubmitData(aesEncryptClientByte , encryptAESKey , rsaPublicKey);
 
 
-//        return submitData;
-        return null;
+        return submitData;
+
     }
 
     /**
@@ -89,19 +94,17 @@ public class GenLicenseKeyUtil {
      * @param rsaPublicKey RSA公钥，用于解密出AES密钥
      * @return
      */
-    private String genSubmitData(String clientData,String encryptAESKey, String rsaPublicKey) {
+    private String genSubmitData(byte[] clientData,byte[] encryptAESKey, byte[] rsaPublicKey) {
         RootSubmitData rootSubmitData = new RootSubmitData();
-        rootSubmitData.setEncryptAESClientData(clientData);
-        rootSubmitData.setEncrptAESKey(encryptAESKey);
-        rootSubmitData.setRsaPublicKey(rsaPublicKey);
+        rootSubmitData.setEncryptAESClientData(new String(Hex.encode(clientData)));
+        rootSubmitData.setEncrptAESKey(new String(Hex.encode(encryptAESKey)));
+        rootSubmitData.setRsaPublicKey(new String(Hex.encode(rsaPublicKey)));
+
         JSONObject jsonObject = new JSONObject();
         try {
-            jsonObject.put("clientData" , rootSubmitData.getEncryptAESClientData());
-            jsonObject.put("encryptAESKey" , rootSubmitData.getEncrptAESKey());
+            jsonObject.put("encryptAESClientData" , rootSubmitData.getEncryptAESClientData());
+            jsonObject.put("encrptAESKey" , rootSubmitData.getEncrptAESKey());
             jsonObject.put("rsaPublicKey" , rootSubmitData.getRsaPublicKey());
-
-
-
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -122,14 +125,6 @@ public class GenLicenseKeyUtil {
         return null;
     }
 
-    /**
-     * 获取要传给服务端的RSA公钥
-     * @return
-     */
-    public byte[] getSubmitRSAPublicKey(){
-        return rsaUtil.getPublicKey();
-    }
-
 
     /**
      * 生成证书里的源数据（证书里的数据包括用户名，uuid和包名）
@@ -139,20 +134,14 @@ public class GenLicenseKeyUtil {
      */
     private String genLicenseData(String input) {
 
+
+
         mRootData.setUserName(input);
         mRootData.setUuid(getDeviceInfoUtil.getUUID());
         mRootData.setApplicationId(getDeviceInfoUtil.getAppPackageName());
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("userName", mRootData.getUserName());
-            jsonObject.put("uuid", mRootData.getUuid());
-            jsonObject.put("applicationId", mRootData.getApplicationId());
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
 
-
-        return jsonObject.toString();
+        String result = mRootData.getUserName() + mRootData.getUuid() + mRootData.getApplicationId();
+        return result;
     }
 
 

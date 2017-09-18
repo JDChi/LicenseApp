@@ -1,7 +1,5 @@
 package license.szca.com.licensekeylibrary;
 
-import org.spongycastle.jce.provider.BouncyCastleProvider;
-
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.Security;
@@ -23,14 +21,12 @@ public class SHAUtil {
      * @param data
      * @return
      */
-    public byte[] encodeSHA1(String data) {
+    public byte[] encodeSHA1(byte[] data) {
         byte[] dataByte = null;
         byte[] newDataByte = null;
         try {
-            //使用SHA进行消息摘要
-            Security.addProvider(new BouncyCastleProvider());
             MessageDigest messageDigest = MessageDigest.getInstance("SHA");
-            dataByte = messageDigest.digest(data.getBytes());
+            dataByte = messageDigest.digest(data);
             //摘要后截取后10位返回
             newDataByte = new byte[10];
             System.arraycopy(dataByte, 9, newDataByte, 0, 10);
