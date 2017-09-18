@@ -1,7 +1,6 @@
 package license.szca.com.licensekeylibrary;
 
 import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.util.encoders.Hex;
 
 import java.security.InvalidKeyException;
 import java.security.Key;
@@ -12,8 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.Signature;
-import java.security.SignatureException;
+import java.security.Security;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -34,22 +32,36 @@ import javax.crypto.NoSuchPaddingException;
  */
 
 public class RSAUtil {
+
+    static {
+        //从位置1开始，添加新的提供者
+        Security.insertProviderAt(new org.spongycastle.jce.provider.BouncyCastleProvider(), 1);
+    }
+
     private Map<String, Key> mKeyMap = new HashMap<>();
     private final String PUBLIC_KEY = "publicKey";
     private final String PRIVATE_KEY = "privateKey";
+    private final String KEY_ALGORITHM = "RSA";
 
     /**
-     * RSA加密数据
+     * RSA私钥加密数据
      *
      * @param data
      * @return
      */
-    public byte[] encryptRSAPublicKey(byte[] data) {
+    public byte[] encryptWithPrivateKey(byte[] data , byte[] privateKeyByte) {
         byte[] dataBytes = null;
+        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKeyByte);
+
+
 
         try {
+            KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
+            PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+
+
             Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
-            cipher.init(Cipher.ENCRYPT_MODE, mKeyMap.get(PUBLIC_KEY));
+            cipher.init(Cipher.ENCRYPT_MODE, privateKey);
             dataBytes = cipher.doFinal(data);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -61,77 +73,33 @@ public class RSAUtil {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
             e.printStackTrace();
-        }
-
-        return dataBytes;
-    }
-
-    /**
-     * RSA加密数据
-     *
-     * @param data
-     * @return
-     */
-    public byte[] encryptRSAPublicKey(String data) {
-        byte[] dataBytes = null;
-
-        try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
-            cipher.init(Cipher.ENCRYPT_MODE, mKeyMap.get(PUBLIC_KEY));
-            dataBytes = cipher.doFinal(data.getBytes());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
+        } catch (InvalidKeySpecException e) {
             e.printStackTrace();
         }
 
         return dataBytes;
     }
+
+
 
     /**
      * RSA解密数据
      *
      * @param data
      */
-    public byte[] decryptRSAPrivateKey(String data) {
+    public byte[] decryptWithPublicKey(byte[] data , byte[] key) {
         byte[] dataBytes = null;
+        X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(key);
+
 
         try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
-            cipher.init(Cipher.DECRYPT_MODE, mKeyMap.get(PRIVATE_KEY));
-            dataBytes = cipher.doFinal(data.getBytes());
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        } catch (NoSuchPaddingException e) {
-            e.printStackTrace();
-        } catch (BadPaddingException e) {
-            e.printStackTrace();
-        } catch (IllegalBlockSizeException e) {
-            e.printStackTrace();
-        } catch (InvalidKeyException e) {
-            e.printStackTrace();
-        }
+            KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
+            PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
 
-        return dataBytes;
-    }
 
-    /**
-     * RSA解密数据
-     *
-     * @param data
-     */
-    public byte[] decryptRSAPrivateKey(byte[] data) {
-        byte[] dataBytes = null;
 
-        try {
-            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
-            cipher.init(Cipher.DECRYPT_MODE, mKeyMap.get(PRIVATE_KEY));
+            Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm(), new BouncyCastleProvider());
+            cipher.init(Cipher.DECRYPT_MODE, publicKey);
             dataBytes = cipher.doFinal(data);
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
@@ -142,6 +110,8 @@ public class RSAUtil {
         } catch (IllegalBlockSizeException e) {
             e.printStackTrace();
         } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
             e.printStackTrace();
         }
 
@@ -178,20 +148,20 @@ public class RSAUtil {
 
     /**
      * 获取生成的密钥
-     * 以十六进制返回
+     *
      * @return
      */
     public byte[] getPrivateKey() {
-        return Hex.encode(mKeyMap.get(PRIVATE_KEY).getEncoded());
+        return mKeyMap.get(PRIVATE_KEY).getEncoded();
     }
 
     /**
      * 获取生成的公钥
-     * 以十六进制返回
+     *
      * @return
      */
     public byte[] getPublicKey() {
-        return Hex.encode(mKeyMap.get(PUBLIC_KEY).getEncoded());
+        return mKeyMap.get(PUBLIC_KEY).getEncoded();
     }
 
 

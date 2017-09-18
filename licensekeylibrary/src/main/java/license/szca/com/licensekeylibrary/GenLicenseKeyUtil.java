@@ -4,36 +4,8 @@ import android.content.Context;
 
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.util.encoders.Hex;
 
-import java.security.InvalidKeyException;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.Security;
-import java.security.Signature;
-import java.security.SignatureException;
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.NoSuchPaddingException;
-
-import static javax.crypto.Cipher.PRIVATE_KEY;
 
 /**
  * description
@@ -68,7 +40,7 @@ public class GenLicenseKeyUtil {
         shaUtil = new SHAUtil();
         aesUtil = new AESUtil();
         mRootData = new RootData();
-        //1.随机初始化密钥和公钥
+        //1.初始化密钥和公钥
         rsaUtil.initPrivateAndPublicKey();
     }
 
@@ -82,25 +54,80 @@ public class GenLicenseKeyUtil {
         String licenseData = genLicenseData(input);
         //3.对拼接后的数据使用SHA1做信息摘要
         byte[] sha1Data = shaUtil.encodeSHA1(licenseData);
-        //4.对摘要后的数据做Hex编码
+        //4.对摘要后的数据做Hex编码，得到要输入的长度20位，大写字母和数字组成的证书
         mLicenseKey = codeUtil.hexData(sha1Data);
 
         return mLicenseKey;
     }
 
-    public String getSubmitData(){
-        //获取要提交给服务端的数据
-        String submitData = genData();
-        //数据过长，使用aes对称加密
-String data = aesUtil.encryptData(submitData);
+    /**
+     * 获取要提交给服务端的数据
+     *
+     * @return
+     */
+    public String getSubmitData(String licenseKey) {
+
+        //获取要提交的数据并加密（由于数据过长，使用aes对称加密）
+        String clientData = genClientData(licenseKey);
+        String aesEncryptClientData = new String(aesUtil.encryptData(clientData , aesUtil.getAESSecretKey()));
+        //获取aes的加密密钥
+        byte[] aesKey = aesUtil.getAESSecretKey();
+        //对aes的密钥进行rsa加密
+//        String encryptAESKey = new String(Base64.encode(rsaUtil.encryptWithPrivateKey(aesKey)));
+        //对aes加密后客户端数据，aes密钥，rsa公钥打包成json返回
+//        String submitData = genSubmitData(aesEncryptClientData , encryptAESKey , new String(Base64.encode(rsaUtil.getPublicKey())));
+
+
+//        return submitData;
+        return null;
+    }
+
+    /**
+     * 提交给服务端的数据
+     * @param clientData 被AES加密过的数据
+     * @param encryptAESKey AES密钥，用于解密出客户端数据
+     * @param rsaPublicKey RSA公钥，用于解密出AES密钥
+     * @return
+     */
+    private String genSubmitData(String clientData,String encryptAESKey, String rsaPublicKey) {
+        RootSubmitData rootSubmitData = new RootSubmitData();
+        rootSubmitData.setEncryptAESClientData(clientData);
+        rootSubmitData.setEncrptAESKey(encryptAESKey);
+        rootSubmitData.setRsaPublicKey(rsaPublicKey);
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("clientData" , rootSubmitData.getEncryptAESClientData());
+            jsonObject.put("encryptAESKey" , rootSubmitData.getEncrptAESKey());
+            jsonObject.put("rsaPublicKey" , rootSubmitData.getRsaPublicKey());
 
 
 
 
-        //将数据进行rsa加密
-        byte[] encryptDataByte = rsaUtil.encryptRSAPublicKey(submitData);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
 
-        return new String(encryptDataByte);
+
+        return jsonObject.toString();
+    }
+
+    /**
+     * 最后要提交给客户端的数据包括：
+     * 1.通过aes加密后的clientData(username，uuid，applicationId，license）
+     * 2.通过rsa加密后的aes密钥
+     * 3.rsa的公钥
+     * @return
+     */
+    private String genSubmitData() {
+        return null;
+    }
+
+    /**
+     * 获取要传给服务端的RSA公钥
+     * @return
+     */
+    public byte[] getSubmitRSAPublicKey(){
+        return rsaUtil.getPublicKey();
     }
 
 
@@ -130,21 +157,23 @@ String data = aesUtil.encryptData(submitData);
 
 
     /**
-     * 生成要提交的原始数据，即在用户名，uuid，applicaitonId的基础上
+     * 生成客户端数据，即在用户名，uuid，applicaitonId的基础上
      * 加入证书
      *
      * @return
      */
-    private String genData() {
+    private String genClientData(String licenseKey) {
 
 
-        mRootData.setLicenseKey(mLicenseKey);
-        mRootData.setAppSignture(getDeviceInfoUtil.getSign());
+        mRootData.setLicenseKey(licenseKey);
+//        mRootData.setAppSignture(getDeviceInfoUtil.getSign());
         JSONObject jsonObject = new JSONObject();
         try {
-
+            jsonObject.put("userName", mRootData.getUserName());
+            jsonObject.put("uuid", mRootData.getUuid());
+            jsonObject.put("applicationId", mRootData.getApplicationId());
             jsonObject.put("licenseKey", mRootData.getLicenseKey());
-            jsonObject.put("appSignature", mRootData.getAppSignture());
+//            jsonObject.put("appSignature", mRootData.getAppSignture());
 
         } catch (JSONException e) {
             e.printStackTrace();
@@ -154,9 +183,7 @@ String data = aesUtil.encryptData(submitData);
         return jsonObject.toString();
     }
 
-    public void getPublicKey(){
 
-    }
 
 
 }

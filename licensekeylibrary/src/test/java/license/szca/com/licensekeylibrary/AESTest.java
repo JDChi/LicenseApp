@@ -6,7 +6,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
- * description :
+ * description : AES测试类
  * author : JDNew
  * on : 2017/9/17.
  */
@@ -14,6 +14,8 @@ import static org.junit.Assert.assertEquals;
 public class AESTest {
 
     AESUtil aesUtil;
+    //未加密数据
+    String originData = "abc";
     @Before
     public void init(){
         aesUtil = new AESUtil();
@@ -21,6 +23,12 @@ public class AESTest {
 
     @Test
     public void aesTest(){
-        assertEquals("abc" , aesUtil.decryptData(aesUtil.encryptData("abc")));
+
+        //aes加密
+        byte[] encryptData = aesUtil.encryptData(originData, aesUtil.getAESSecretKey());
+        //aes解密
+        byte[] decryptData = aesUtil.decryptData(encryptData , aesUtil.getAESSecretKey());
+
+        assertEquals(originData, new String(decryptData));
     }
 }

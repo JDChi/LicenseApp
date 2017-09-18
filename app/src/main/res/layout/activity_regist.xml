@@ -27,6 +27,7 @@
         android:id="@+id/et_key"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:hint="输入证书（长度20位，由大写字母和数字组成）"
         tools:text="license : xxxx-xxxx-xxxx-xxxx-xxxx"
         android:layout_marginTop="32dp"/>
 

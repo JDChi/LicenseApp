@@ -1,7 +1,7 @@
 package license.szca.com.licensekeylibrary;
 
 /**
- * description : 要提交的数据的实体类
+ * description : 客户端数据的实体类
  * author : JDNew
  * on : 2017/9/17.
  */
@@ -12,8 +12,6 @@ class RootData {
     private String applicationId;
     private String licenseKey;
     private String appSignture;
-
-
 
 
 
@@ -57,4 +55,6 @@ class RootData {
     public void setLicenseKey(String licenseKey) {
         this.licenseKey = licenseKey;
     }
+
+
 }

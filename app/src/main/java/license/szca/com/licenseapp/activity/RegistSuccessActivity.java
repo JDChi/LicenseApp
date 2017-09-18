@@ -7,7 +7,7 @@ import android.support.v7.app.AppCompatActivity;
 import license.szca.com.licenseapp.R;
 
 /**
- * description :
+ * description : 注册成功页面
  * author : JDNew
  * on : 2017/9/17.
  */

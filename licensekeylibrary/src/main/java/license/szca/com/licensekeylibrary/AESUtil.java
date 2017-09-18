@@ -1,9 +1,9 @@
 package license.szca.com.licensekeylibrary;
 
 import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.util.encoders.Hex;
 
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.Security;
@@ -14,6 +14,7 @@ import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * description : aes对称加密工具类
@@ -24,7 +25,7 @@ import javax.crypto.SecretKey;
 public class AESUtil {
 
     private final String KEY_ALGORITEM = "AES";
-    private final String CIPHER_ALGORITEM = "AES/ECB/PKCS5Padding";
+    private final String CIPHER_ALGORITEM = "AES/ECB/PKCS7Padding";
     private SecretKey mSecretKey;
 
     public AESUtil() {
@@ -36,7 +37,7 @@ public class AESUtil {
             //使用SHA进行消息摘要
             Security.addProvider(new BouncyCastleProvider());
                 KeyGenerator keyGenerator = KeyGenerator.getInstance(KEY_ALGORITEM, "SC");
-            keyGenerator.init(256);
+            keyGenerator.init(128);
             mSecretKey = keyGenerator.generateKey();
 
         } catch (NoSuchAlgorithmException e) {
@@ -51,14 +52,15 @@ public class AESUtil {
      *
      * @param data 要加密的数据
      */
-    public String encryptData(String data) {
-        String enryptResult = null;
+    public byte[] encryptData(String data , byte[] keyByte) {
+        byte[] enryptResult = null;
+        Key key = genKey(keyByte);
 
         try {
-            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITEM);
-            cipher.init(Cipher.ENCRYPT_MODE, mSecretKey);
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITEM , "SC");
+            cipher.init(Cipher.ENCRYPT_MODE, key);
 
-            enryptResult = new String(Hex.encode(cipher.doFinal(data.getBytes())));
+            enryptResult = cipher.doFinal(data.getBytes());
 
 
         } catch (NoSuchAlgorithmException e) {
@@ -70,6 +72,8 @@ public class AESUtil {
         } catch (BadPaddingException e) {
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
             e.printStackTrace();
         }
         return enryptResult;
@@ -80,13 +84,14 @@ public class AESUtil {
      * @param data 要解密的数据
      * @return
      */
-    public String decryptData(String data){
+    public byte[] decryptData(String data , byte[] keyByte){
 
-        String decryptResult = null;
+        Key key = genKey(keyByte);
+        byte[] decryptResult = null;
         try {
-            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITEM);
-            cipher.init(Cipher.DECRYPT_MODE , mSecretKey);
-            decryptResult = new String(Hex.encode(cipher.doFinal(data.getBytes())));
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITEM , "SC");
+            cipher.init(Cipher.DECRYPT_MODE , key);
+            decryptResult = cipher.doFinal(data.getBytes());
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
         } catch (NoSuchPaddingException e) {
@@ -96,6 +101,38 @@ public class AESUtil {
         } catch (BadPaddingException e) {
             e.printStackTrace();
         } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
+            e.printStackTrace();
+        }
+
+        return decryptResult;
+    }
+
+    /**
+     * aes解密数据
+     * @param data 要解密的数据
+     * @return
+     */
+    public byte[] decryptData(byte[] data , byte[] keyByte){
+
+        Key key = genKey(keyByte);
+        byte[] decryptResult = null;
+        try {
+            Cipher cipher = Cipher.getInstance(CIPHER_ALGORITEM , "SC");
+            cipher.init(Cipher.DECRYPT_MODE , key);
+            decryptResult = cipher.doFinal(data);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (NoSuchProviderException e) {
             e.printStackTrace();
         }
 
@@ -108,6 +145,11 @@ public class AESUtil {
      */
     public byte[] getAESSecretKey(){
         return mSecretKey.getEncoded();
+    }
+
+    private Key genKey(byte[] keyByte){
+        SecretKey secretKey = new SecretKeySpec(keyByte , KEY_ALGORITEM);
+        return secretKey;
     }
 
 }
