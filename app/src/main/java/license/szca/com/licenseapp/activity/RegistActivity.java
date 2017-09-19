@@ -4,6 +4,8 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
@@ -16,6 +18,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
+
+import java.util.Iterator;
+import java.util.List;
 
 import license.szca.com.licenseapp.R;
 import license.szca.com.licenseapp.presenter.RegistPresenter;
@@ -97,7 +102,7 @@ public class RegistActivity extends AppCompatActivity implements View.OnClickLis
 
         bt_gen.setOnClickListener(this);
         bt_check.setOnClickListener(this);
-
+byte[] sign = getSign(this);
 
         registPresenter = new RegistPresenter(this, this);
     }
@@ -145,6 +150,24 @@ et_key.setText(key);
     @Override
     public void checkLicenseKeyFailed(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
+    }
+
+    private byte[] getSign(Context context) {
+        PackageManager pm = context.getPackageManager();
+        List<PackageInfo> apps = pm
+                .getInstalledPackages(PackageManager.GET_SIGNATURES);
+        Iterator<PackageInfo> iter = apps.iterator();
+
+        while (iter.hasNext()) {
+            PackageInfo info = iter.next();
+            String packageName = info.packageName;
+            //按包名 取签名
+            if (packageName.equals("license.szca.com.licenseapp")) {
+                return info.signatures[0].toByteArray();
+
+            }
+        }
+        return null;
     }
 }
 
