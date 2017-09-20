@@ -77,6 +77,7 @@ public class RegistActivity extends AppCompatActivity implements View.OnClickLis
 
     @Override
     public void getLicenseKeyFailed(String msg) {
+        dismissProgressDialog();
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
     }
 
