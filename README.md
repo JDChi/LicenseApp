@@ -51,4 +51,4 @@ conSign(no)->opReplyFailed->end
 
 ![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/screenshot_20170920-181656.png)
 ![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/screenshot_20170920_181704.png)
-![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/Screenshot_20170920_181748.png.png)
+![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/Screenshot_20170920_181748.png)
