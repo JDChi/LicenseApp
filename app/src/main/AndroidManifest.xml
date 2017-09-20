@@ -26,7 +26,7 @@
         <activity android:name=".activity.RegistSuccessActivity"/>
 
         <service android:name=".service.BackService"
-            ></service>
+            android:process=":remote"></service>
     </application>
 
 </manifest>
