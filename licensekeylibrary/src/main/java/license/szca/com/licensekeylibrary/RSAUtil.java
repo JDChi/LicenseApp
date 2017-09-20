@@ -12,6 +12,8 @@ import java.security.NoSuchProviderException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.Signature;
+import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
@@ -42,11 +44,13 @@ public class RSAUtil {
     private final String PUBLIC_KEY = "publicKey";
     private final String PRIVATE_KEY = "privateKey";
     private final String KEY_ALGORITHM = "RSA";
+    private final String SIGN_ALGORITHM = "SHA1withRSA";
 
 
     /**
      * RSA私钥加密数据
-     * @param data 要加密的数据
+     *
+     * @param data           要加密的数据
      * @param privateKeyByte 二进制的私钥
      * @return 私钥加密后的数据
      */
@@ -77,9 +81,46 @@ public class RSAUtil {
         return dataBytes;
     }
 
+
+    /**
+     * RSA公钥加密数据
+     *
+     * @param data          要加密的数据
+     * @param publicKeyByte 二进制的公钥
+     * @return 公钥加密后的数据
+     */
+    public byte[] encryptWithPublicKey(byte[] data, byte[] publicKeyByte) {
+        byte[] dataBytes = null;
+        try {
+            X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(publicKeyByte);
+            KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
+            PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
+
+            Cipher cipher = Cipher.getInstance("RSA", new BouncyCastleProvider());
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+            dataBytes = cipher.doFinal(data);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+
+        return dataBytes;
+    }
+
+
     /**
      * RSA解密数据
-     * @param data 要解密的数据
+     *
+     * @param data          要解密的数据
      * @param publicKeyByte 二进制公钥
      * @return 解密后的数据
      */
@@ -109,6 +150,41 @@ public class RSAUtil {
 
         return dataBytes;
     }
+
+    /**
+     * RSA解密数据
+     *
+     * @param data           要解密的数据
+     * @param privateKeyByte 二进制私钥
+     * @return 解密后的数据
+     */
+    public byte[] decryptWithPrivateKey(byte[] data, byte[] privateKeyByte) {
+        byte[] dataBytes = null;
+        try {
+            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKeyByte);
+            KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
+            PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+
+            Cipher cipher = Cipher.getInstance(keyFactory.getAlgorithm(), new BouncyCastleProvider());
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            dataBytes = cipher.doFinal(data);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (NoSuchPaddingException e) {
+            e.printStackTrace();
+        } catch (BadPaddingException e) {
+            e.printStackTrace();
+        } catch (IllegalBlockSizeException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        }
+
+        return dataBytes;
+    }
+
 
     /**
      * 初始化生成公钥和密钥
@@ -153,6 +229,73 @@ public class RSAUtil {
      */
     public byte[] getPublicKey() {
         return mKeyMap.get(PUBLIC_KEY).getEncoded();
+    }
+
+
+    /**
+     * 用私钥签名
+     *
+     * @param data           要签名的数据
+     * @param privateKeyByte 私钥
+     * @return 已签名的数据
+     */
+    public byte[] signWithPrivateKey(byte[] data, byte[] privateKeyByte) {
+
+        byte[] result = null;
+        try {
+            PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(privateKeyByte);
+            KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
+            PrivateKey privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+            Signature signature = Signature.getInstance(SIGN_ALGORITHM);
+            signature.initSign(privateKey);
+            signature.update(data);
+            result = signature.sign();
+
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (SignatureException e) {
+            e.printStackTrace();
+        }
+
+        return result;
+    }
+
+    /**
+     * 校验签名
+     *
+     * @param data 要校验的数据
+     * @param publicKeyByte 公钥
+     * @param sign 签名
+     * @return 校验结果（布尔值）
+     */
+    public boolean verify(byte[] data, byte[] publicKeyByte, byte[] sign) {
+        boolean result = false;
+        try {
+            X509EncodedKeySpec x509EncodedKeySpec = new X509EncodedKeySpec(publicKeyByte);
+            KeyFactory keyFactory = KeyFactory.getInstance(KEY_ALGORITHM);
+            PublicKey publicKey = keyFactory.generatePublic(x509EncodedKeySpec);
+            Signature signature = Signature.getInstance(SIGN_ALGORITHM);
+            signature.initVerify(publicKey);
+            signature.update(data);
+            result = signature.verify(sign);
+
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        } catch (InvalidKeySpecException e) {
+            e.printStackTrace();
+        } catch (InvalidKeyException e) {
+            e.printStackTrace();
+        } catch (SignatureException e) {
+            e.printStackTrace();
+        }
+
+        return result;
     }
 
 }

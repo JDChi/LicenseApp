@@ -7,10 +7,7 @@ package license.szca.com.licensekeylibrary;
  */
 
 public class RootSubmitData {
-    /**
-     * RSA公钥，用于解密出AES密钥
-     */
-    private String rsaPublicKey;
+
     /**
      * AES密钥，用于解密出客户端数据
      */
@@ -19,14 +16,16 @@ public class RootSubmitData {
      * 被AES加密过的数据
      */
     private String encryptAESClientData;
+    /**
+     * 签名后的数据
+     */
+    private String signData;
+    /**
+     * RSA签名公钥
+     */
+    private String rsaSignPublicKey;
 
-    public String getRsaPublicKey() {
-        return rsaPublicKey;
-    }
 
-    public void setRsaPublicKey(String rsaPublicKey) {
-        this.rsaPublicKey = rsaPublicKey;
-    }
 
     public String getEncrptAESKey() {
         return encrptAESKey;
@@ -42,6 +41,22 @@ public class RootSubmitData {
 
     public void setEncryptAESClientData(String encryptAESClientData) {
         this.encryptAESClientData = encryptAESClientData;
+    }
+
+    public String getSignData() {
+        return signData;
+    }
+
+    public void setSignData(String signData) {
+        this.signData = signData;
+    }
+
+    public String getRsaSignPublicKey() {
+        return rsaSignPublicKey;
+    }
+
+    public void setRsaSignPublicKey(String rsaSignPublicKey) {
+        this.rsaSignPublicKey = rsaSignPublicKey;
     }
 
 

@@ -21,7 +21,7 @@
         android:id="@+id/bt_gen"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="生成证书"/>
+        android:text="获取证书"/>
 
     <EditText
         android:id="@+id/et_key"

@@ -25,8 +25,8 @@
         </activity>
         <activity android:name=".activity.RegistSuccessActivity"/>
 
-        <service android:name=".service.CheckLicenseService"
-            android:process=":remote"></service>
+        <service android:name=".service.BackService"
+            ></service>
     </application>
 
 </manifest>
