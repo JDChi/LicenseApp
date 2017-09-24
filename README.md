@@ -1,3 +1,18 @@
+# 项目结构
+## app
+主要是用于用户输入信息
+
+## licensekeylibrary
+是一个库，里面放着加密，解密的封装，以及其它一些数据的生成
+
+## serverapp
+主要是对客户端提交的用户输入信息进行证书的生成和校验
+
+<b>注：在运行的时候必需保证客户端和服务端两个app都已经安装在手机上，我这里没做判断，在之后会做多一层判断。</b>
+
+<b>app和serverapp之间的通信是用AIDL的方式进行，在一开始我是用Messenger来做的（Messenger的底层也是AIDL，这里一开始为了方便就用Messenger），所以你可以看到有RegsitActivity和RegistActivity1，前者是用Messenger，后者就是用AIDL，所以可以做些适当的修改进行切换。</b>
+
+
 # 客户端流程图
 
 ```flow
@@ -49,6 +64,9 @@ conSign(no)->opReplyFailed->end
 
 ```
 
-![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/screenshot_20170920-181656.png)
+
+
+
+![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/screenshot_20170920_181656.png)
 ![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/screenshot_20170920_181704.png)
-![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/Screenshot_20170920_181748.png)
+![](https://github.com/JDNew/LicenseApp/blob/master/app/src/main/res/mipmap-xhdpi/screenshot_20170920_181748.png)
