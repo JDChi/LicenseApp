@@ -5,6 +5,7 @@
       <module fileurl="file://$PROJECT_DIR$/LicenseApp.iml" filepath="$PROJECT_DIR$/LicenseApp.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
       <module fileurl="file://$PROJECT_DIR$/licensekeylibrary/licensekeylibrary.iml" filepath="$PROJECT_DIR$/licensekeylibrary/licensekeylibrary.iml" />
+      <module fileurl="file://$PROJECT_DIR$/serverapp/serverapp.iml" filepath="$PROJECT_DIR$/serverapp/serverapp.iml" />
     </modules>
   </component>
 </project>

@@ -1,1 +1,1 @@
-include ':app', ':licensekeylibrary'
+include ':app', ':licensekeylibrary', ':serverapp'
