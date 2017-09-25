@@ -12,6 +12,10 @@
 
 <b>app和serverapp之间的通信是用AIDL的方式进行，在一开始我是用Messenger来做的（Messenger的底层也是AIDL，这里一开始为了方便就用Messenger），所以你可以看到有RegsitActivity和RegistActivity1，前者是用Messenger，后者就是用AIDL，所以可以做些适当的修改进行切换。</b>
 
+<b>另我也对此写了相关博客</b>
+
+[Android之使用AIDL进行IPC（一）](http://blog.csdn.net/u013066292/article/details/78083755)
+
 # 序列图
 ```sequence
 app->serverapp: 提交生成证书的数据
